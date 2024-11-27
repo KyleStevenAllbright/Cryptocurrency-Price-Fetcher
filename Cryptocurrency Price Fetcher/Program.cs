@@ -1,11 +1,11 @@
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient<BitcoinPriceService>();
+
 
 var app = builder.Build();
 
@@ -18,8 +18,21 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
-app.MapControllers();
+// Bitcoin Price Endpoint
+app.MapGet("/bitcoinprice", async (BitcoinPriceService bitcoinPriceService) =>
+{
+    Console.WriteLine("Endpoint /bitcoinprice was hit.");
+    try
+    {
+        var price = await bitcoinPriceService.GetBitcoinPriceAsync();
+        return Results.Ok(new { BitcoinPriceUSD = price });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex.Message}");
+        return Results.Problem($"Error fetching Bitcoin price: {ex.Message}");
+    }
+})
+.WithName("GetBitcoinPrice");
 
 app.Run();
